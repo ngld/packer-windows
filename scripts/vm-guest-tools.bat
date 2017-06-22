@@ -28,13 +28,19 @@ goto :done
 
 :virtualbox
 
+cd C:\Windows\Temp
+move /Y C:\Users\vagrant\VBoxGuestAdditions.iso .
+"C:\Program Files\7-Zip\7z.exe" x VBoxGuestAdditions.iso -ovirtualbox
+
 :: There needs to be Oracle CA (Certificate Authority) certificates installed in order
 :: to prevent user intervention popups which will undermine a silent installation.
-cmd /c certutil -addstore -f "TrustedPublisher" A:\oracle-cert.cer
+cd virtualbox\cert
+VBoxCertUtil add-trusted-publisher vbox-sha1.cer --root vbox-sha1.cer
+VBoxCertUtil add-trusted-publisher vbox-sha256.cer --root vbox-sha256.cer
+VBoxCertUtil add-trusted-publisher vbox-sha256-r3.cer --root vbox-sha256-r3.cer
 
-move /Y C:\Users\vagrant\VBoxGuestAdditions.iso C:\Windows\Temp
-cmd /c ""C:\Program Files\7-Zip\7z.exe" x C:\Windows\Temp\VBoxGuestAdditions.iso -oC:\Windows\Temp\virtualbox"
-cmd /c C:\Windows\Temp\virtualbox\VBoxWindowsAdditions.exe /S
+cd ..
+VBoxWindowsAdditions.exe /S
 goto :done
 
 :parallels

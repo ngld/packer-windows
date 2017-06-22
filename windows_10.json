@@ -38,6 +38,7 @@
       "iso_checksum": "{{user `iso_checksum`}}",
       "headless": false,
       "boot_wait": "2m",
+      "post_shutdown_delay": "30s",
       "ssh_username": "vagrant",
       "ssh_password": "vagrant",
       "ssh_wait_timeout": "2h",
@@ -49,8 +50,7 @@
         "./scripts/fixnetwork.ps1",
         "./scripts/microsoft-updates.bat",
         "./scripts/win-updates.ps1",
-        "./scripts/openssh.ps1",
-        "./scripts/oracle-cert.cer"
+        "./scripts/openssh.ps1"
       ],
       "vboxmanage": [
         [
@@ -122,6 +122,22 @@
         "./scripts/vagrant-ssh.bat",
         "./scripts/disable-auto-logon.bat",
         "./scripts/enable-rdp.bat",
+        "./scripts/rsync.bat"
+      ]
+    },
+    {
+      "type": "shell",
+      "remote_path": "/tmp/script.ps1",
+      "execute_command": "{{.Vars}} powershell -File C:/Windows/Temp/script.ps1",
+      "scripts": [
+        "./scripts/chocolatey.ps1"
+      ]
+    },
+    {
+      "type": "shell",
+      "remote_path": "/tmp/script.bat",
+      "execute_command": "{{.Vars}} cmd /c C:/Windows/Temp/script.bat",
+      "scripts": [
         "./scripts/compile-dotnet-assemblies.bat",
         "./scripts/compact.bat"
       ]
