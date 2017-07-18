@@ -9,4 +9,4 @@
 /output-virtualbox-ovf/
 /*.box
 /packer_cache/
-
+/wsusoffline/

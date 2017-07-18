@@ -1,32 +1,39 @@
-if not exist "C:\Windows\Temp\7z920-x64.msi" (
-	powershell -Command "(New-Object System.Net.WebClient).DownloadFile('http://www.7-zip.org/a/7z920-x64.msi', 'C:\Windows\Temp\7z920-x64.msi')" <NUL
-)
-msiexec /qb /i C:\Windows\Temp\7z920-x64.msi
+@echo off
 
-if not exist "C:\Windows\Temp\ultradefrag.zip" (
-	powershell -Command "(New-Object System.Net.WebClient).DownloadFile('http://downloads.sourceforge.net/project/ultradefrag/stable-release/6.1.0/ultradefrag-portable-6.1.0.bin.amd64.zip', 'C:\Windows\Temp\ultradefrag.zip')" <NUL
-)
+cd /D C:\Windows\Temp
 
-if not exist "C:\Windows\Temp\ultradefrag-portable-6.1.0.amd64\udefrag.exe" (
-	cmd /c ""C:\Program Files\7-Zip\7z.exe" x C:\Windows\Temp\ultradefrag.zip -oC:\Windows\Temp"
-)
+echo ==^> Installing tools...
 
-if not exist "C:\Windows\Temp\SDelete.zip" (
-  powershell -Command "(New-Object System.Net.WebClient).DownloadFile('http://download.sysinternals.com/files/SDelete.zip', 'C:\Windows\Temp\SDelete.zip')" <NUL
-)
+choco install -y 7zip wget
+choco install -y ultradefrag --params="'/NoShellExtension /DisableUsageTracking /NoBootInterface'"
 
-if not exist "C:\Windows\Temp\sdelete.exe" (
-	cmd /c ""C:\Program Files\7-Zip\7z.exe" x C:\Windows\Temp\SDelete.zip -oC:\Windows\Temp"
-)
+if exist sdelete.exe goto :skip_sd_extract
+if exist SDelete.zip goto :skip_sd_dl
 
-msiexec /qb /x C:\Windows\Temp\7z920-x64.msi
+wget -q -Osdelete.zip https://dev.tproxy.de/mirror/sdelete_1.6.zip
 
+:skip_sd_dl
+7z x sdelete.zip
+
+:skip_sd_extract
+
+echo ==^> Deleting downloaded updates...
 net stop wuauserv
 rmdir /S /Q C:\Windows\SoftwareDistribution\Download
 mkdir C:\Windows\SoftwareDistribution\Download
 net start wuauserv
 
-cmd /c C:\Windows\Temp\ultradefrag-portable-6.1.0.amd64\udefrag.exe --optimize --repeat C:
+del \packer_server.txt
 
-cmd /c %SystemRoot%\System32\reg.exe ADD HKCU\Software\Sysinternals\SDelete /v EulaAccepted /t REG_DWORD /d 1 /f
-cmd /c C:\Windows\Temp\sdelete.exe -q -z C:
+echo ==^> Defragmenting hard drive...
+udefrag --optimize --repeat C:
+
+echo ==^> Uninstalling used tools...
+choco uninstall -y wget ultradefrag 7zip
+
+echo ==^> Zeroing unused sectors (for a smaller disk image)...
+reg ADD HKCU\Software\Sysinternals\SDelete /v EulaAccepted /t REG_DWORD /d 1 /f
+sdelete.exe -q -z C:
+
+echo ==^> Deleting temporary files...
+start cmd /C del /S /Q C:\Windows\Temp

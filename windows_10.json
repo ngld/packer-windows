@@ -5,11 +5,12 @@
       "iso_url": "{{user `iso_url`}}",
       "iso_checksum_type": "{{user `iso_checksum_type`}}",
       "iso_checksum": "{{user `iso_checksum`}}",
+      "http_directory": ".",
       "headless": false,
       "boot_wait": "2m",
       "ssh_username": "vagrant",
       "ssh_password": "vagrant",
-      "ssh_wait_timeout": "2h",
+      "ssh_wait_timeout": "30m",
       "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
       "guest_os_type": "windows8srv-64",
       "tools_upload_flavor": "windows",
@@ -18,10 +19,8 @@
       "vnc_port_max": 5980,
       "floppy_files": [
         "{{user `autounattend`}}",
-        "./scripts/fixnetwork.ps1",
-        "./scripts/microsoft-updates.bat",
-        "./scripts/win-updates.ps1",
-        "./scripts/openssh.ps1"
+        "./scripts/install-openssh.ps1",
+        "./scripts/fixnetwork.ps1"
       ],
       "vmx_data": {
         "RemoteDisplay.vnc.enabled": "false",
@@ -36,21 +35,20 @@
       "iso_url": "{{user `iso_url`}}",
       "iso_checksum_type": "{{user `iso_checksum_type`}}",
       "iso_checksum": "{{user `iso_checksum`}}",
+      "http_directory": ".",
       "headless": false,
       "boot_wait": "2m",
       "post_shutdown_delay": "30s",
       "ssh_username": "vagrant",
       "ssh_password": "vagrant",
-      "ssh_wait_timeout": "2h",
+      "ssh_wait_timeout": "30m",
       "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
       "guest_os_type": "Windows81_64",
       "disk_size": 61440,
       "floppy_files": [
         "{{user `autounattend`}}",
-        "./scripts/fixnetwork.ps1",
-        "./scripts/microsoft-updates.bat",
-        "./scripts/win-updates.ps1",
-        "./scripts/openssh.ps1"
+        "./scripts/install-openssh.ps1",
+        "./scripts/fixnetwork.ps1"
       ],
       "vboxmanage": [
         [
@@ -72,21 +70,19 @@
       "iso_url": "{{user `iso_url`}}",
       "iso_checksum_type": "{{user `iso_checksum_type`}}",
       "iso_checksum": "{{user `iso_checksum`}}",
+      "http_directory": ".",
       "boot_wait": "2m",
       "ssh_username": "vagrant",
       "ssh_password": "vagrant",
-      "ssh_wait_timeout": "2h",
+      "ssh_wait_timeout": "30m",
       "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
       "guest_os_type": "win-10",
       "parallels_tools_flavor": "win",
       "disk_size": 61440,
       "floppy_files": [
         "{{user `autounattend`}}",
-        "./scripts/fixnetwork.ps1",
-        "./scripts/microsoft-updates.bat",
-        "./scripts/win-updates.ps1",
-        "./scripts/openssh.ps1",
-        "./scripts/oracle-cert.cer"
+        "./scripts/install-openssh.ps1",
+        "./scripts/fixnetwork.ps1"
       ],
       "prlctl": [
         [
@@ -114,31 +110,47 @@
   ],
   "provisioners": [
     {
-      "type": "shell",
+      "type": "powershell",
+      "inline": [
+        "Set-Content -Path \"C:\\packer_server.txt\" -Value \"http://${env:PACKER_HTTP_ADDR}\"",
+        "Set-Content -Path \"C:\\packer_build.txt\" -Value \"${env:PACKER_BUILD_TYPE}\""
+      ],
+      "environment_vars": []
+    },
+    {
+      "type": "windows-shell",
+      "remote_path": "/tmp/script.bat",
+      "execute_command": "{{.Vars}} cmd /c C:/Windows/Temp/script.bat w100-x64",
+      "script": "./scripts/install-wsus-pack.bat"
+    },
+    {
+      "type": "windows-restart",
+      "restart_command": "cmd /C C:/wsus/cmd/DoUpdate.cmd /updatecpp /instdotnet4 /instwmf /skipieinst /skipdefs /autoreboot ; cmd /c start cmd /c taskkill /f /im sshd.exe",
+      "restart_timeout": "2h"
+    },
+    {
+      "type": "windows-shell",
+      "remote_path": "/tmp/script.bat",
+      "execute_command": "{{.Vars}} cmd /c C:/Windows/Temp/script.bat",
+      "script": "./scripts/chocolatey.bat"
+    },
+    {
+      "type": "windows-restart",
+      "restart_command": "shutdown /r /f /t 0 ; cmd /c start cmd /c taskkill /f /im sshd.exe",
+      "restart_timeout": "40m"
+    },
+    {
+      "type": "powershell",
+      "script": "./scripts/dis-updates.ps1"
+    },
+    {
+      "type": "windows-shell",
       "remote_path": "/tmp/script.bat",
       "execute_command": "{{.Vars}} cmd /c C:/Windows/Temp/script.bat",
       "scripts": [
         "./scripts/vm-guest-tools.bat",
-        "./scripts/vagrant-ssh.bat",
-        "./scripts/disable-auto-logon.bat",
         "./scripts/enable-rdp.bat",
-        "./scripts/rsync.bat"
-      ]
-    },
-    {
-      "type": "shell",
-      "remote_path": "/tmp/script.ps1",
-      "execute_command": "{{.Vars}} powershell -File C:/Windows/Temp/script.ps1",
-      "scripts": [
-        "./scripts/chocolatey.ps1"
-      ]
-    },
-    {
-      "type": "shell",
-      "remote_path": "/tmp/script.bat",
-      "execute_command": "{{.Vars}} cmd /c C:/Windows/Temp/script.bat",
-      "scripts": [
-        "./scripts/compile-dotnet-assemblies.bat",
+        "./scripts/disable-auto-logon.bat",
         "./scripts/compact.bat"
       ]
     }
