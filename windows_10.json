@@ -113,7 +113,7 @@
       "type": "powershell",
       "inline": [
         "Set-Content -Path \"C:\\packer_server.txt\" -Value \"http://${env:PACKER_HTTP_ADDR}\"",
-        "Set-Content -Path \"C:\\packer_build.txt\" -Value \"${env:PACKER_BUILD_TYPE}\""
+        "Set-Content -Path \"C:\\packer_build.txt\" -Value \"${env:PACKER_BUILDER_TYPE}\""
       ],
       "environment_vars": []
     },
